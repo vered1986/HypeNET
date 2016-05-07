@@ -79,11 +79,18 @@ class PathLSTMClassifier(BaseEstimator):
         """
         model = self.model
         builder = self.builder
-        path_cache = {}
-        test_pred = [1 if process_one_instance(builder, model, path_set, path_cache, False,
-                                               x_y_vectors=x_y_vectors[i] if x_y_vectors is not None else None).
-                              npvalue()[1] > 0.5 else 0
-                     for i, path_set in enumerate(X_test)]
+
+        test_pred = []
+
+        # Predict every 100 instances together (memory consuming)
+        for chunk in xrange(0, len(X_test), 100):
+            renew_cg()
+            path_cache = {}
+            test_pred.extend([np.argmax(process_one_instance(
+                builder, model, path_set, path_cache, False, dropout=0.0,
+                x_y_vectors=x_y_vectors[chunk + i] if x_y_vectors is not None else None,
+                num_hidden_layers=self.num_hidden_layers).npvalue())
+                              for i, path_set in enumerate(X_test[chunk:chunk+100])])
 
         return test_pred
 

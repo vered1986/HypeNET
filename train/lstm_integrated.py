@@ -1,6 +1,6 @@
 import sys
 sys.argv.insert(1, '--cnn-mem')
-sys.argv.insert(2, '32768')
+sys.argv.insert(2, '8192')
 
 from sklearn.metrics import precision_recall_fscore_support
 from paths_lstm_classifier import PathLSTMClassifier
