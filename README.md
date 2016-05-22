@@ -1,4 +1,4 @@
-# HypNN: Integrated Path-based and Distributional Method for Hypernymy Detection
+# HypeNET: Integrated Path-based and Distributional Method for Hypernymy Detection
 
 This is the code used in the paper:
 
