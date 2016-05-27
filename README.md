@@ -3,7 +3,7 @@
 This is the code used in the paper:
 
 <b>"Improving Hypernymy Detection with an Integrated Path-based and Distributional Method"</b><br/>
-Vered Shwartz, Yoav Goldberg and Ido Dagan. arXiv:1603.06076, 2016.
+Vered Shwartz, Yoav Goldberg and Ido Dagan. ACL 2016.
 
 It is used to classify hypernymy relations between term-pairs, using disributional information on each term, and path-based information, encoded using an LSTM.
 
