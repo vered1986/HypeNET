@@ -1,26 +1,31 @@
 import sys
 sys.argv.insert(1, '--cnn-mem')
 sys.argv.insert(2, '8192')
+sys.argv.insert(3, '--cnn-seed')
+sys.argv.insert(4, '2840892268')
 
-from sklearn.metrics import precision_recall_fscore_support
-from paths_lstm_classifier import PathLSTMClassifier
 from lstm_common import *
-from knowledge_resource import KnowledgeResource
-from collections import defaultdict
 from itertools import count
+from collections import defaultdict
+from knowledge_resource import KnowledgeResource
+from paths_lstm_classifier import PathLSTMClassifier
+from sklearn.metrics import precision_recall_fscore_support
 
 EMBEDDINGS_DIM = 50
 
 
 def main():
+    """
+    Trains the LSTM-based integrated pattern-based and distributional method for hypernymy detection
+    :return:
+    """
 
-    # The LSTM-based integrated pattern-based and distributional method for hypernymy detection
-    corpus_prefix = sys.argv[3]
-    dataset_prefix = sys.argv[4]
-    output_file = sys.argv[5]
-    embeddings_file = sys.argv[6]
-    alpha = float(sys.argv[7])
-    word_dropout_rate = float(sys.argv[8])
+    corpus_prefix = sys.argv[5]
+    dataset_prefix = sys.argv[6]
+    output_file = sys.argv[7]
+    embeddings_file = sys.argv[8]
+    alpha = float(sys.argv[9])
+    word_dropout_rate = float(sys.argv[10])
 
     np.random.seed(133)
     relations = ['False', 'True']
@@ -76,11 +81,10 @@ def main():
     print 'Precision: %.3f, Recall: %.3f, F1: %.3f' % (p, r, f1)
 
     # Save the best model to a file
-    classifier.save_model(output_file)
+    classifier.save_model(output_file, [lemma_index, pos_index, dep_index, dir_index])
 
     # Write the predictions to a file
-    predictions = [1 if y > 0.5 else 0 for y in pred]
-    output_predictions(output_file + '.predictions', relations, predictions, test_set.keys(), y_test)
+    output_predictions(output_file + '.predictions', relations, pred, test_set.keys(), y_test)
 
     # Retrieve k-best scoring paths
     all_paths = unique([path for path_list in dataset_instances for path in path_list])

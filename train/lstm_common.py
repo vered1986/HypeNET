@@ -1,5 +1,4 @@
 import codecs
-
 import numpy as np
 from itertools import groupby
 
@@ -149,6 +148,5 @@ def unique(a):
     :return:
     """
     indices = sorted(range(len(a)), key=a.__getitem__)
-    indices = set(next(it) for k, it in
-                  groupby(indices, key=a.__getitem__))
+    indices = set(next(it) for k, it in groupby(indices, key=a.__getitem__))
     return [x for i, x in enumerate(a) if i in indices]

@@ -1,5 +1,6 @@
-import numpy as np
 import math
+import json
+import numpy as np
 
 from pycnn import *
 import pycnn
@@ -16,7 +17,7 @@ DIR_DIM = 1
 class PathLSTMClassifier(BaseEstimator):
 
     def __init__(self, num_lemmas, num_pos, num_dep, num_directions=5, n_epochs=10, num_relations=2,
-                 alpha=0.01, lemma_embeddings=None, dropout=0.0, use_xy_embeddings=False):
+                 alpha=0.01, lemma_embeddings=None, dropout=0.0, use_xy_embeddings=True):
         """"
         Initialize the LSTM
         :param num_lemmas Number of distinct lemmas
@@ -61,17 +62,24 @@ class PathLSTMClassifier(BaseEstimator):
               self.dropout, x_y_vectors)
         print 'Done!'
 
-    def save_model(self, output_prefix):
+    def save_model(self, output_prefix, dictionaries):
         """
         Save the trained model to a file
         """
         self.model.save(output_prefix + '.model')
 
-    def load_model(self, model_file_prefix):
-        """
-        Load the trained model from a file
-        """
-        self.model.load(model_file_prefix + '.model')
+        # Save the model parameter shapes
+        lookups = ['lemma_lookup', 'pos_lookup', 'dep_lookup', 'dir_lookup']
+        params = { param_name : self.model[param_name].shape() for param_name in lookups }
+        params['num_relations'] = self.num_relations
+        params['use_xy_embeddings'] = self.use_xy_embeddings
+
+        with open(output_prefix + '.params', 'w') as f_out:
+            json.dump(params, f_out, indent=2)
+
+        # Save the dictionaries
+        with open(output_prefix + '.dict', 'w') as f_out:
+            json.dump(dictionaries, f_out, indent=2)
 
     def predict(self, X_test, x_y_vectors=None):
         """
@@ -86,10 +94,9 @@ class PathLSTMClassifier(BaseEstimator):
         for chunk in xrange(0, len(X_test), 100):
             renew_cg()
             path_cache = {}
-            test_pred.extend([np.argmax(process_one_instance(
-                builder, model, path_set, path_cache, False, dropout=0.0,
-                x_y_vectors=x_y_vectors[chunk + i] if x_y_vectors is not None else None,
-                num_hidden_layers=self.num_hidden_layers).npvalue())
+            test_pred.extend([np.argmax(process_one_instance(builder, model, path_set, path_cache, False, dropout=0.0,
+                                                            x_y_vectors=x_y_vectors[chunk + i]
+                                                            if x_y_vectors is not None else None).npvalue())
                               for i, path_set in enumerate(X_test[chunk:chunk+100])])
 
         return test_pred
@@ -242,7 +249,7 @@ def train(builder, model, X_train, y_train, nepochs, alpha=0.01, update=True, dr
 
 
 def create_computation_graph(num_lemmas, num_pos, num_dep, num_directions, num_relations, wv=None,
-                             use_xy_embeddings=False):
+                             use_xy_embeddings=True):
     """
     Initialize the model
     :param num_lemmas Number of distinct lemmas
@@ -276,3 +283,28 @@ def create_computation_graph(num_lemmas, num_pos, num_dep, num_directions, num_r
     model.add_lookup_parameters("dir_lookup", (num_directions, DIR_DIM))
 
     return builder, model
+
+
+def load_model(model_file_prefix):
+    """
+    Load the trained model from a file
+    """
+
+    # Load the parameters from the json file
+    with open(model_file_prefix + '.params') as f_in:
+        params = json.load(f_in)
+
+    classifier = PathLSTMClassifier(params['lemma_lookup'][0], params['pos_lookup'][0], params['dep_lookup'][0],
+                                    params['dir_lookup'][0], num_relations=params['num_relations'],
+                                    use_xy_embeddings=params['use_xy_embeddings'])
+
+    # Load the model
+    classifier.model.load(model_file_prefix + '.model')
+
+    # Load the dictionaries from the json file
+    with open(model_file_prefix + '.dict') as f_in:
+        dictionaries = json.load(f_in)
+
+    lemma_index, pos_index, dep_index, dir_index = dictionaries
+
+    return classifier, lemma_index, pos_index, dep_index, dir_index
