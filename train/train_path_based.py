@@ -2,7 +2,7 @@ import sys
 sys.argv.insert(1, '--cnn-mem')
 sys.argv.insert(2, '8192')
 sys.argv.insert(3, '--cnn-seed')
-sys.argv.insert(4, '2840892268')
+sys.argv.insert(4, '2840892268') # Change to any seed you'd like
 
 from lstm_common import *
 from itertools import count
@@ -43,18 +43,20 @@ def main():
     dataset_keys = train_set.keys() + test_set.keys() + val_set.keys()
     print 'Done!'
 
-    # Load the paths and create the feature vectors
-    print 'Loading path files...'
-    dataset_instances, lemma_index, pos_index, dep_index, dir_index, lemma_inverted_index, pos_inverted_index, \
-        dep_inverted_index, dir_inverted_index = load_paths(corpus_prefix, dataset_keys)
-    print 'Done!'
-    print 'Number of lemmas %d, number of pos tags: %d, number of dependency labels: %d, number of directions: %d' % \
-          (len(lemma_index), len(pos_index), len(dep_index), len(dir_index))
-
     # Load the word embeddings
     print 'Initializing word embeddings...'
     if embeddings_file is not None:
-        wv = load_embeddings(embeddings_file, lemma_index.keys())
+        wv, lemma_index = load_embeddings(embeddings_file)
+
+    lemma_inverted_index = { i : w for w, i in lemma_index.iteritems() }
+
+    # Load the paths and create the feature vectors
+    print 'Loading path files...'
+    dataset_instances, pos_index, dep_index, dir_index, pos_inverted_index, dep_inverted_index, dir_inverted_index = \
+        load_paths(corpus_prefix, dataset_keys, lemma_index)
+    print 'Done!'
+    print 'Number of lemmas %d, number of pos tags: %d, number of dependency labels: %d, number of directions: %d' % \
+          (len(lemma_index), len(pos_index), len(dep_index), len(dir_index))
 
     X_train = dataset_instances[:len(train_set)]
     X_test = dataset_instances[len(train_set):len(train_set)+len(test_set)]
@@ -92,7 +94,7 @@ def main():
             print >> f_out, '\t'.join([path_str, str(score)])
 
 
-def load_paths(corpus_prefix, dataset_keys):
+def load_paths(corpus_prefix, dataset_keys, lemma_index):
     """
     Override load_paths from lstm_common to include (x, y) vectors
     :param corpus_prefix:
@@ -101,15 +103,13 @@ def load_paths(corpus_prefix, dataset_keys):
     """
 
     # Define the dictionaries
-    lemma_index = defaultdict(count(0).next)
     pos_index = defaultdict(count(0).next)
     dep_index = defaultdict(count(0).next)
     dir_index = defaultdict(count(0).next)
 
-    dummy = lemma_index['#NOPATH#']
-    dummy = pos_index['#NOPATH#']
-    dummy = dep_index['#NOPATH#']
-    dummy = dir_index['#NOPATH#']
+    dummy = pos_index['#UNKNOWN#']
+    dummy = dep_index['#UNKNOWN#']
+    dummy = dir_index['#UNKNOWN#']
 
     # Load the resource (processed corpus)
     print 'Loading the corpus...'
@@ -127,13 +127,11 @@ def load_paths(corpus_prefix, dataset_keys):
     empty = [dataset_keys[i] for i, path_list in enumerate(paths) if len(path_list.keys()) == 0]
     print 'Pairs without paths:', len(empty), ', all dataset:', len(dataset_keys)
 
-    lemma_inverted_index = { i : p for p, i in lemma_index.iteritems() }
     pos_inverted_index = { i : p for p, i in pos_index.iteritems() }
     dep_inverted_index = { i : p for p, i in dep_index.iteritems() }
     dir_inverted_index = { i : p for p, i in dir_index.iteritems() }
 
-    return paths, lemma_index, pos_index, dep_index, dir_index, \
-           lemma_inverted_index, pos_inverted_index, dep_inverted_index, dir_inverted_index
+    return paths, pos_index, dep_index, dir_index, pos_inverted_index, dep_inverted_index, dir_inverted_index
 
 
 if __name__ == '__main__':

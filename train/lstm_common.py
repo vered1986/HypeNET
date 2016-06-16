@@ -76,7 +76,7 @@ def vectorize_edge(edge, lemma_index, pos_index, dep_index, dir_index):
     except:
         return None
 
-    return tuple([lemma_index[lemma], pos_index[pos], dep_index[dep], dir_index[direction]])
+    return tuple([lemma_index.get(lemma, 0), pos_index[pos], dep_index[dep], dir_index[direction]])
 
 
 def reconstruct_edge((lemma, pos, dep, direction),
@@ -115,30 +115,26 @@ def output_predictions(predictions_file, relations, predictions, test_keys, test
             print >> f_out, '\t'.join([x, y, relations[test_labels[i]], relations[predictions[i]]])
 
 
-def load_embeddings(file_name, vocabulary):
+def load_embeddings(file_name):
     """
     Load the pre-trained embeddings from a file
     :param file_name: the embeddings file
-    :param vocabulary: limited vocabulary to load vectors for
     :return: the vocabulary and the word vectors
     """
     with codecs.open(file_name, 'r', 'utf-8') as f_in:
         words, vectors = zip(*[line.strip().split(' ', 1) for line in f_in])
-    vectors = np.loadtxt(vectors)
 
-    unknown = np.random.random_sample((EMBEDDINGS_DIM,))
-
-    # Get only the words from the vocabulary
-    words_set = set(words)
-    wv = [vectors[words.index(lemma)] if lemma in words_set else unknown for lemma in vocabulary]
-
-    print 'Known lemmas:', len(words_set.intersection(set(vocabulary))), '/', len(vocabulary)
+    # Add the unknown word
+    UNKNOWN_WORD = np.random.random_sample((EMBEDDINGS_DIM,))
+    wv = np.vstack((UNKNOWN_WORD, np.loadtxt(vectors)))
+    words = ['#UNKNOWN#'] + list(words)
+    word_index = { w : i for i, w in enumerate(words) }
 
     # Normalize each row (word vector) in the matrix to sum-up to 1
     row_norm = np.sum(np.abs(wv)**2, axis=-1)**(1./2)
     wv /= row_norm[:, np.newaxis]
 
-    return wv
+    return wv, word_index
 
 
 def unique(a):

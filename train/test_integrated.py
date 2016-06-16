@@ -65,7 +65,7 @@ def load_paths(corpus, dataset_keys, lemma_index, pos_index, dep_index, dir_inde
     print 'Pairs without paths:', len(empty), ', all dataset:', len(dataset_keys)
 
     # Get the word embeddings for x and y (get a lemma index)
-    x_y_vectors = [(lemma_index[x], lemma_index[y]) for (x, y) in dataset_keys]
+    x_y_vectors = [(lemma_index.get(x, 0), lemma_index.get(y, 0)) for (x, y) in dataset_keys]
 
     return x_y_vectors, paths_x_to_y
 
