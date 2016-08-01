@@ -18,9 +18,10 @@ def main():
 
         <triplets_file> = the file that contains text triplets, formated as X\tY\tpath
         <frequent_paths_file> = the file containing the frequent paths, that should be included in the resource.
-        Similarly to Snow et al. (2004), we consider only paths that occurred at least 5 times in the corpus.
-        This file can be computed with an awk script using the triplet files created from parse_wikipedia.py
-        (e.g. parsed_corpus): awk -F$'\t' '{a[$1]++; if (a[$1] == 5) print $1}' parsed_corpus > frequent_paths
+        Similarly to Snow et al. (2004), we considered only paths that occurred with 5 different term-pairs in the
+        corpus. These could be computed using the triplet files created from parse_wikipedia.py (e.g. parsed_corpus):
+        sort -u parsed_corpus | cut -f3 -d$'\t' > paths
+        awk -F$'\t' '{a[$1]++; if (a[$1] == 5) print $1}' paths > frequent_paths
         <resource_prefix> = the file names' prefix for the resource files
     """)
 
