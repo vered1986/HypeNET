@@ -9,6 +9,10 @@ It is used to classify hypernymy relations between term-pairs, using disribution
 
 ***
 
+Consider using our new project, [LexNET](https://github.com/vered1986/LexNET)! It supports classification of multiple semantic relations, and contains several model enhancements and detailed documentation.
+
+***
+
 <b>Prerequisites:</b>
 * Python 2.7
 * Numpy
