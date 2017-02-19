@@ -19,6 +19,7 @@ Consider using our new project, [LexNET](https://github.com/vered1986/LexNET)! I
 * scikit-learn
 * [bsddb](https://docs.python.org/2/library/bsddb.html)
 * [PyCNN](https://github.com/clab/cnn/)
+* [spacy](spacy.io/docs/) (currently works only with 0.99, see [here](https://github.com/vered1986/HypeNET/issues/2))
 
 <b>Quick Start:</b>
 
