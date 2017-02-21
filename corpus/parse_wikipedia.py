@@ -14,23 +14,25 @@ def main():
     args = docopt("""Parse the Wikipedia dump and create a triplets file, each line is formatted as follows: X\t\Y\tpath
 
     Usage:
-        parse_wikipedia.py <in_file>
+        parse_wikipedia.py <in_file> <out_file>
 
         <in_file> = the Wikipedia dump file
+        <out_file> = the output (parsed) file
     """)
 
     nlp = English()
 
     in_file = args['<in_file>']
+    out_file = args['<out_file>']
 
     with codecs.open(in_file, 'r', 'utf-8') as f_in:
-        with codecs.open(in_file + '_parsed', 'w', 'utf-8') as f_out:
+        with codecs.open(out_file, 'w', 'utf-8') as f_out:
 
             # Read the next paragraph
             for paragraph in f_in:
 
                 # Skip empty lines
-                paragraph = paragraph.strip()
+                paragraph = paragraph.replace("'''", '').strip()
                 if len(paragraph) == 0:
                     continue
 
@@ -40,7 +42,7 @@ def main():
                 for sent in parsed_par.sents:
                     dependency_paths = parse_sentence(sent)
                     if len(dependency_paths) > 0:
-                        print >>f_out, '\n'.join(['\t'.join(path) for path in dependency_paths])
+                        print >> f_out, '\n'.join(['\t'.join(path) for path in dependency_paths])
 
 
 def parse_sentence(sent):
@@ -50,10 +52,12 @@ def parse_sentence(sent):
     :return: the list of entities and paths
     """
 
-    # Get all term indices
-    indices = [(token, i, i) for i, token in enumerate(sent) if token.tag_[:2] == 'NN'
-               and len(token.string.strip()) > 2]
-    indices.extend([(np, np.start, np.end) for np in sent.doc.noun_chunks])
+    # Get all noun indices
+    indices = [(token, i, i) for i, token in enumerate(sent) if token.tag_[:2] == 'NN' and len(token.string.strip()) > 2]
+
+    # Add noun chunks for the current sentence
+    # Don't include noun chunks with only one word - these are nouns already included
+    indices.extend([(np, np.start, np.end) for np in sent.doc.noun_chunks if sent.start <= np.start < np.end - 1 < sent.end])
 
     # Get all dependency paths between nouns, up to length 4
     term_pairs = [(x[0], y[0]) for x in indices for y in indices if x[2] < y[1]]
@@ -144,7 +148,7 @@ def check_direction(lch, hs, f_dir):
 
 def get_satellite_links((x, hx, lch, hy, y)):
     """
-    Add the "setallites" - single links not already contained in the dependency path added on either side of each noun
+    Add the "satellites" - single links not already contained in the dependency path added on either side of each noun
     :param x: the X token
     :param y: the Y token
     :param hx: X's head tokens
@@ -155,11 +159,11 @@ def get_satellite_links((x, hx, lch, hy, y)):
     paths = [(None, x, hx, lch, hy, y, None)]
 
     x_lefts = [tok for tok in x.lefts]
-    if len(x_lefts) > 0:
+    if len(x_lefts) > 0 and x_lefts[0].tag_ != 'PUNCT' and len(x_lefts[0].string.strip()) > 1:
         paths.append((x_lefts[0], x, hx, lch, hy, y, None))
 
     y_rights = [tok for tok in y.rights]
-    if len(y_rights) > 0:
+    if len(y_rights) > 0 and y_rights[0].tag_ != 'PUNCT' and len(y_rights[0].string.strip()) > 1:
         paths.append((None, x, hx, lch, hy, y, y_rights[0]))
 
     return paths
