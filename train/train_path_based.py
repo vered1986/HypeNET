@@ -1,8 +1,12 @@
 import sys
-sys.argv.insert(1, '--cnn-mem')
-sys.argv.insert(2, '8192')
-sys.argv.insert(3, '--cnn-seed')
-sys.argv.insert(4, '2840892268') # Change to any seed you'd like
+sys.argv.insert(1, '--dynet-gpus')
+sys.argv.insert(2, '1')
+sys.argv.insert(3, '--dynet-mem')
+sys.argv.insert(4, '8192')
+sys.argv.insert(5, '--dynet-seed')
+sys.argv.insert(6, '2840892268') # Change to any seed you'd like
+
+sys.path.append('../common')
 
 from lstm_common import *
 from itertools import count
@@ -21,12 +25,12 @@ def main():
     :return:
     """
 
-    corpus_prefix = sys.argv[5]
-    dataset_prefix = sys.argv[6]
-    output_file = sys.argv[7]
-    embeddings_file = sys.argv[8]
-    alpha = float(sys.argv[9])
-    word_dropout_rate = float(sys.argv[10])
+    corpus_prefix = sys.argv[7]
+    dataset_prefix = sys.argv[8]
+    output_file = sys.argv[9]
+    embeddings_file = sys.argv[10]
+    alpha = float(sys.argv[11])
+    word_dropout_rate = float(sys.argv[12])
 
     np.random.seed(133)
     relations = ['False', 'True']

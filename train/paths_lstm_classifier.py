@@ -2,8 +2,8 @@ import math
 import json
 import numpy as np
 
-from pycnn import *
-import pycnn
+import dynet
+from _dynet import *
 from sklearn.base import BaseEstimator
 
 NUM_LAYERS = 2
@@ -48,9 +48,10 @@ class PathLSTMClassifier(BaseEstimator):
 
         # Create the network
         print 'Creating the network...'
-        self.builder, self.model = create_computation_graph(self.num_lemmas, self.num_pos, self.num_dep,
-                                                            self.num_directions, self.num_relations, self.wv,
-                                                            self.use_xy_embeddings)
+        self.builder, self.model, self.model_parameters = create_computation_graph(self.num_lemmas, self.num_pos,
+                                                                                   self.num_dep, self.num_directions,
+                                                                                   self.num_relations, self.wv,
+                                                                                   self.use_xy_embeddings)
         print 'Done!'
 
     def fit(self, X_train, y_train, x_y_vectors=None):
@@ -58,7 +59,7 @@ class PathLSTMClassifier(BaseEstimator):
         Train the model
         """
         print 'Training the model...'
-        train(self.builder, self.model, X_train, y_train, self.n_epochs, self.alpha, self.update,
+        train(self.builder, self.model, self.model_parameters, X_train, y_train, self.n_epochs, self.alpha, self.update,
               self.dropout, x_y_vectors)
         print 'Done!'
 
@@ -70,7 +71,7 @@ class PathLSTMClassifier(BaseEstimator):
 
         # Save the model parameter shapes
         lookups = ['lemma_lookup', 'pos_lookup', 'dep_lookup', 'dir_lookup']
-        params = { param_name : self.model[param_name].shape() for param_name in lookups }
+        params = { param_name : self.model_parameters[param_name].shape() for param_name in lookups }
         params['num_relations'] = self.num_relations
         params['use_xy_embeddings'] = self.use_xy_embeddings
 
@@ -87,6 +88,7 @@ class PathLSTMClassifier(BaseEstimator):
         """
         model = self.model
         builder = self.builder
+        model_parameters = self.model_parameters
 
         test_pred = []
 
@@ -94,8 +96,8 @@ class PathLSTMClassifier(BaseEstimator):
         for chunk in xrange(0, len(X_test), 100):
             renew_cg()
             path_cache = {}
-            test_pred.extend([np.argmax(process_one_instance(builder, model, path_set, path_cache, False, dropout=0.0,
-                                                            x_y_vectors=x_y_vectors[chunk + i]
+            test_pred.extend([np.argmax(process_one_instance(builder, model, model_parameters, path_set, path_cache,
+                                                             False, dropout=0.0, x_y_vectors=x_y_vectors[chunk + i]
                                                             if x_y_vectors is not None else None).npvalue())
                               for i, path_set in enumerate(X_test[chunk:chunk+100])])
 
@@ -107,18 +109,18 @@ class PathLSTMClassifier(BaseEstimator):
         """
         cg = renew_cg()
         path_scores = []
-        lemma_lookup = self.model["lemma_lookup"]
-        pos_lookup = self.model["pos_lookup"]
-        dep_lookup = self.model["dep_lookup"]
-        dir_lookup = self.model["dir_lookup"]
+        lemma_lookup = self.model_parameters["lemma_lookup"]
+        pos_lookup = self.model_parameters["pos_lookup"]
+        dep_lookup = self.model_parameters["dep_lookup"]
+        dir_lookup = self.model_parameters["dir_lookup"]
         builder = self.builder
-        W = parameter(self.model["W"])
+        W = parameter(self.model_parameters["W"])
 
         for path in all_paths:
             path_embedding = get_path_embedding(builder, lemma_lookup, pos_lookup, dep_lookup, dir_lookup, path)
 
             if self.use_xy_embeddings:
-                zero_word = pycnn._vecInputExpression(cg, [0.0] * LEMMA_DIM)
+                zero_word = dynet.inputVector([0.0] * LEMMA_DIM)
                 path_embedding = concatenate([zero_word, path_embedding, zero_word])
 
             path_scores.append(softmax(W * path_embedding).npvalue()[1])
@@ -134,21 +136,23 @@ class PathLSTMClassifier(BaseEstimator):
         return top_paths
 
 
-def process_one_instance(builder, model, instance, path_cache, update=True, dropout=0.0, x_y_vectors=None):
+def process_one_instance(builder, model, model_parameters, instance, path_cache, update=True, dropout=0.0,
+                         x_y_vectors=None):
     """
     Return the LSTM output vector of a single term-pair - the average path embedding
     :param builder: the LSTM builder
     :param model: the LSTM model
+    :param model_parameters: the model parameters
     :param update: whether to update the lemma embeddings
     :param instance: a Counter object with paths
     :return: the LSTM output vector of a single term-pair
     """
 
-    W = parameter(model["W"])
-    lemma_lookup = model["lemma_lookup"]
-    pos_lookup = model["pos_lookup"]
-    dep_lookup = model["dep_lookup"]
-    dir_lookup = model["dir_lookup"]
+    W = parameter(model_parameters["W"])
+    lemma_lookup = model_parameters["lemma_lookup"]
+    pos_lookup = model_parameters["pos_lookup"]
+    dep_lookup = model_parameters["dep_lookup"]
+    dir_lookup = model_parameters["dir_lookup"]
 
     # Use the LSTM output vector and feed it to the MLP
     num_paths = reduce(lambda x, y: x + y, instance.itervalues())
@@ -207,11 +211,13 @@ def word_dropout(lookup_table, word, rate):
     return lookup(lookup_table, new_word)
 
 
-def train(builder, model, X_train, y_train, nepochs, alpha=0.01, update=True, dropout=0.0, x_y_vectors=None):
+def train(builder, model, model_parameters, X_train, y_train, nepochs, alpha=0.01, update=True, dropout=0.0,
+          x_y_vectors=None):
     """
     Train the LSTM
     :param builder: the LSTM builder
     :param model: LSTM RNN model
+    :param model_parameters: the model parameters
     :param X_train: the train instances
     :param y_train: the train labels
     :param nepochs: number of epochs
@@ -236,7 +242,7 @@ def train(builder, model, X_train, y_train, nepochs, alpha=0.01, update=True, dr
 
             renew_cg()
             loss = esum([-log(pick(
-                process_one_instance(builder, model, X_train[batch_indices[i]], path_cache, update, dropout,
+                process_one_instance(builder, model, model_parameters, X_train[batch_indices[i]], path_cache, update, dropout,
                                      x_y_vectors=x_y_vectors[batch_indices[i]] if x_y_vectors is not None else None),
                 y_train[batch_indices[i]])) for i in range(minibatch_size)])
             total_loss += loss.value() # forward computation
@@ -270,19 +276,20 @@ def create_computation_graph(num_lemmas, num_pos, num_dep, num_directions, num_r
     if use_xy_embeddings:
         network_input += 2 * LEMMA_DIM
 
-    model.add_parameters("W", (num_relations, network_input))
+    model_parameters = {}
+    model_parameters["W"] = model.add_parameters((num_relations, network_input))
 
-    model.add_lookup_parameters("lemma_lookup", (num_lemmas, LEMMA_DIM))
+    model_parameters["lemma_lookup"] = model.add_lookup_parameters((num_lemmas, LEMMA_DIM))
 
     # Pre-trained word embeddings
     if wv is not None:
-        model["lemma_lookup"].init_from_array(wv)
+        model_parameters["lemma_lookup"].init_from_array(wv)
 
-    model.add_lookup_parameters("pos_lookup", (num_pos, POS_DIM))
-    model.add_lookup_parameters("dep_lookup", (num_dep, DEP_DIM))
-    model.add_lookup_parameters("dir_lookup", (num_directions, DIR_DIM))
+    model_parameters["pos_lookup"] = model.add_lookup_parameters((num_pos, POS_DIM))
+    model_parameters["dep_lookup"] = model.add_lookup_parameters((num_dep, DEP_DIM))
+    model_parameters["dir_lookup"] = model.add_lookup_parameters((num_directions, DIR_DIM))
 
-    return builder, model
+    return builder, model, model_parameters
 
 
 def load_model(model_file_prefix):

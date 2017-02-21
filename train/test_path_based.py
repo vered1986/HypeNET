@@ -1,6 +1,10 @@
 import sys
-sys.argv.insert(1, '--cnn-mem')
-sys.argv.insert(2, '8192')
+sys.argv.insert(1, '--dynet-gpus')
+sys.argv.insert(2, '1')
+sys.argv.insert(3, '--dynet-mem')
+sys.argv.insert(4, '8192')
+
+sys.path.append('../common')
 
 from lstm_common import *
 from paths_lstm_classifier import *
@@ -16,9 +20,9 @@ def main():
     Load a pre-trained model of the LSTM-based path-based method for hypernymy detection, and test it on the test set
     :return:
     """
-    corpus_prefix = sys.argv[3]
-    dataset_prefix = sys.argv[4]
-    model_file_prefix = sys.argv[5]
+    corpus_prefix = sys.argv[5]
+    dataset_prefix = sys.argv[6]
+    model_file_prefix = sys.argv[7]
 
     # Load the datasets
     print 'Loading the dataset...'
