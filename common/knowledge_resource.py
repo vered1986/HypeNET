@@ -10,11 +10,11 @@ class KnowledgeResource:
         Init the knowledge resource
         :param resource_prefix - the resource directory and file prefix
         """
-        self.term_to_id = bsddb.btopen(resource_prefix + '_term_to_id.db')
-        self.id_to_term = bsddb.btopen(resource_prefix + '_id_to_term.db')
-        self.path_to_id = bsddb.btopen(resource_prefix + '_path_to_id.db')
-        self.id_to_path = bsddb.btopen(resource_prefix + '_id_to_path.db')
-        self.l2r_edges = bsddb.btopen(resource_prefix + '_l2r.db')
+        self.term_to_id = bsddb.btopen(resource_prefix + '_term_to_id.db', 'r')
+        self.id_to_term = bsddb.btopen(resource_prefix + '_id_to_term.db', 'r')
+        self.path_to_id = bsddb.btopen(resource_prefix + '_path_to_id.db', 'r')
+        self.id_to_path = bsddb.btopen(resource_prefix + '_id_to_path.db', 'r')
+        self.l2r_edges = bsddb.btopen(resource_prefix + '_l2r.db', 'r')
 
     def get_term_by_id(self, id):
         return self.id_to_term[str(id)]
