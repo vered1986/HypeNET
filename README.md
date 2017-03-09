@@ -9,22 +9,37 @@ It is used to classify hypernymy relations between term-pairs, using disribution
 
 ***
 
+## Version 2:
+
+### Major features and improvements:
+* Using dynet instead of pycnn (thanks @srajana!)
+* Making the resource creation time and memory efficient
+
+### Bug fixes:
+* Too many paths in parse_wikipedia (see issue [#2](https://github.com/vered1986/HypeNET/issues/2))
+
+To reproduce the results reported in the paper, please use [V1](https://github.com/vered1986/HypeNET/tree/master).
+The current version acheives similar results - the integrated model's performance on the randomly split dataset is:
+Precision: 0.918, Recall: 0.907, F1: 0.912
+
+***
+
 Consider using our new project, [LexNET](https://github.com/vered1986/LexNET)! It supports classification of multiple semantic relations, and contains several model enhancements and detailed documentation.
 
 ***
 
 <b>Prerequisites:</b>
 * Python 2.7
-* Numpy
+* numpy
 * scikit-learn
 * [bsddb](https://docs.python.org/2/library/bsddb.html)
-* [PyCNN](https://github.com/clab/cnn/)
-* [spacy](spacy.io/docs/) (currently works only with 0.99, see [here](https://github.com/vered1986/HypeNET/issues/2))
+* [dynet](https://github.com/clab/dynet/)
+* [spacy](spacy.io/docs/)
 
 <b>Quick Start:</b>
 
 The repository contains the following directories:
-* common - the knowledge resource class, which is used by other models to save the path data from the corpus (should be copied to other directories).
+* common - the knowledge resource class, which is used by other models to save the path data from the corpus.
 * corpus - code for parsing the corpus and extracting paths, including the generalizations made for the baseline method.
 * dataset - code for creating the dataset used in the paper, and the dataset itself.
 * train - code for training and testing both variants of our model (path-based and integrated).
