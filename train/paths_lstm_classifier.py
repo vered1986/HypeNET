@@ -2,7 +2,7 @@ import math
 import json
 import numpy as np
 
-import dynet
+import _dynet
 from _dynet import *
 from sklearn.base import BaseEstimator
 
@@ -12,6 +12,8 @@ LEMMA_DIM = 50
 POS_DIM = 4
 DEP_DIM = 5
 DIR_DIM = 1
+
+EMPTY_PATH = ((0, 0, 0, 0),)
 
 
 class PathLSTMClassifier(BaseEstimator):
@@ -120,7 +122,7 @@ class PathLSTMClassifier(BaseEstimator):
             path_embedding = get_path_embedding(builder, lemma_lookup, pos_lookup, dep_lookup, dir_lookup, path)
 
             if self.use_xy_embeddings:
-                zero_word = dynet.inputVector([0.0] * LEMMA_DIM)
+                zero_word = _dynet.inputVector([0.0] * LEMMA_DIM)
                 path_embedding = concatenate([zero_word, path_embedding, zero_word])
 
             path_scores.append(softmax(W * path_embedding).npvalue()[1])
@@ -154,11 +156,17 @@ def process_one_instance(builder, model, model_parameters, instance, path_cache,
     dep_lookup = model_parameters["dep_lookup"]
     dir_lookup = model_parameters["dir_lookup"]
 
+    # Add the empty path
+    paths = instance
+
+    if len(paths) == 0:
+        paths[EMPTY_PATH] = 1
+
     # Use the LSTM output vector and feed it to the MLP
-    num_paths = reduce(lambda x, y: x + y, instance.itervalues())
+    num_paths = reduce(lambda x, y: x + y, paths.itervalues())
     path_embbedings = [get_path_embedding_from_cache(path_cache, builder, lemma_lookup, pos_lookup, dep_lookup,
                                                      dir_lookup, path, update, dropout) * count
-                       for path, count in instance.iteritems()]
+                       for path, count in paths.iteritems()]
     h = esum(path_embbedings) * (1.0 / num_paths)
 
     # Concatenate x and y embeddings

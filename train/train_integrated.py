@@ -2,7 +2,7 @@ import sys
 sys.argv.insert(1, '--dynet-gpus')
 sys.argv.insert(2, '1')
 sys.argv.insert(3, '--dynet-mem')
-sys.argv.insert(4, '8192')
+sys.argv.insert(4, '16384')
 sys.argv.insert(5, '--dynet-seed')
 sys.argv.insert(6, '2840892268') # Change to any seed you'd like
 
