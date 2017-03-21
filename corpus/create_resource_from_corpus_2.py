@@ -27,7 +27,6 @@ def main():
     # Load the resource DBs
     term_to_id_db = bsddb.btopen(resource_prefix + '_term_to_id.db')
     path_to_id_db = bsddb.btopen(resource_prefix + '_path_to_id.db')
-    frequent_paths = set(path_to_id_db.keys())
 
     with codecs.open(triplet_file) as f_in:
         with codecs.open(triplet_file + '_id', 'w') as f_out:
@@ -39,8 +38,8 @@ def main():
                     continue
 
                 # Frequent path
-                if path in frequent_paths:
-                    x_id, y_id, path_id = term_to_id_db[x], term_to_id_db[y], path_to_id_db[path]
+                x_id, y_id, path_id = term_to_id_db[x], term_to_id_db[y], path_to_id_db.get(path, -1)
+                if path_id != -1:
                     print >> f_out, '\t'.join(map(str, (x_id, y_id, path_id)))
 
 
