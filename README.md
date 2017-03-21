@@ -44,12 +44,22 @@ The repository contains the following directories:
 * dataset - code for creating the dataset used in the paper, and the dataset itself.
 * train - code for training and testing both variants of our model (path-based and integrated).
 
-To train the integrated model, run:
+<b>To create a processed corpus, download a Wikipedia dump, and run:</b>
 
-`train_integrated.py [corpus_prefix] [dataset_prefix] [model_prefix_file] [embeddings_file] [alpha] [word_dropout_rate]`
+```
+bash create_resource_from_corpus.sh [wiki_dump_file] [resource_prefix]
+```
+
+Where `resource_prefix` is the file path and prefix of the corpus files, e.g. `corpus/wiki`, such that the directory `corpus` will eventually contain the `wiki_*.db` files created by this script.
+
+<b>To train the integrated model, run:</b>
+
+```
+train_integrated.py [resource_prefix] [dataset_prefix] [model_prefix_file] [embeddings_file] [alpha] [word_dropout_rate]
+```
 
 Where:
-* `corpus_prefix` is the file path and prefix of the corpus files, e.g. `corpus/wiki`, such that the directory corpus contains the `wiki_*.db` files created by `create_resource_from_corpus.py`.
+* `resource_prefix` is the file path and prefix of the corpus files, e.g. `corpus/wiki`, such that the directory `corpus` contains the `wiki_*.db` files created by `create_resource_from_corpus.sh`.
 * `dataset_prefix` is the file path of the dataset files, e.g. `dataset/rnd`, such that this directory contains 3 files: `train.tsv`, `test.tsv` and `val.tsv`.
 * `model_prefix_file` is the output directory and prefix for the model files. The model is saved in 3 files: `.model`, `.params` and `.dict.`
 In addition, the test set predictions are saved in `.predictions`, and the prominent paths are saved to `.paths`.
