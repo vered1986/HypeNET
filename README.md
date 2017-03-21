@@ -13,7 +13,7 @@ It is used to classify hypernymy relations between term-pairs, using disribution
 
 ### Major features and improvements:
 * Using dynet instead of pycnn (thanks @srajana!)
-* Making the resource creation time and memory efficient
+* Automating corpus processing with a single bash script which is more time and memory efficient
 
 ### Bug fixes:
 * Too many paths in parse_wikipedia (see issue [#2](https://github.com/vered1986/HypeNET/issues/2))
